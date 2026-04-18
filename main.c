@@ -4,13 +4,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-
-extern "C" {
+#include <stdbool.h>
 //#include"./SDL2-2.0.10/include/SDL.h"
 #include <SDL.h>
 //#include"./SDL2-2.0.10/include/SDL_main.h"
 #include <SDL_main.h>
-}
+
 
 #define SCREEN_WIDTH    640
 #define SCREEN_HEIGHT   480
@@ -189,7 +188,7 @@ void move_snake(Snake** first, Snake** last) {                                  
     }
 }
 
-int isPos_valid(Snake** first, dot* Dot) {
+int isPos_valid(Snake** first, struct dot* Dot) {
     for (Snake* current = *first; current != NULL; current = current->nextPos) {                           //sprawdzenie czy jej pozycja nie koliduje z pozycja weza
         if (current->x == Dot->x && current->y == Dot->y) {
             return 1;
@@ -198,21 +197,21 @@ int isPos_valid(Snake** first, dot* Dot) {
     return 0;
 }
 
-void generate_blueDot(dot* blueDot, Snake** first) {                                                    //funkcja generujaca niebieska kropke
+void generate_blueDot(struct dot* blueDot, Snake** first) {                                                    //funkcja generujaca niebieska kropke
     do {
         blueDot->x = rand() % GRID_ELEMENTS;
         blueDot->y = rand() % GRID_ELEMENTS;
     } while (isPos_valid(first, blueDot));                                                             //sprawdzenie kolizjiz wezem
 }
 
-void generate_bonus(dot* bonus, dot* blueDot, Snake** first) {
+void generate_bonus(struct dot* bonus, struct dot* blueDot, Snake** first) {
     do {                                                                                                //sprawdzenie kolizji
         bonus->x = rand() % GRID_ELEMENTS;
         bonus->y = rand() % GRID_ELEMENTS;
     } while ((bonus->x == blueDot->x && bonus->y == blueDot->y) || isPos_valid(first, bonus));
 }
 
-void check_blueDot(dot* blueDot, int* points, Snake** first, Snake** last) {                            //obluga zdjedzenia niebieskiej kropki
+void check_blueDot(struct dot* blueDot, int* points, Snake** first, Snake** last) {                            //obluga zdjedzenia niebieskiej kropki
     if ((*first)->x == blueDot->x && (*first)->y == blueDot->y) {
         *points += BLUEDOT_POINTS;
         add_segment(last);
@@ -230,7 +229,7 @@ int get_snake_length(Snake** first) {                                           
     return length;
 }
 
-void check_bonus(dot bonus, double* snake_update_interval, bool* bonus_active, int* points, Snake** first, Snake** last) {
+void check_bonus(struct dot bonus, double* snake_update_interval, bool* bonus_active, int* points, Snake** first, Snake** last) {
     if ((*first)->x == bonus.x && (*first)->y == bonus.y) {                                             //funkcja obslugujaca zjedzenie czerwonej kropki
         *bonus_active = false;
         *points += REDDOT_POINTS;
@@ -260,7 +259,7 @@ void free_snake(Snake* element) {                                               
     }
 }
 
-void reset_game(Snake** first, Snake** last, dot* blueDot, double* worldTime, double* snake_update_interval, bool* bonus_active, int* points) {
+void reset_game(Snake** first, Snake** last, struct dot* blueDot, double* worldTime, double* snake_update_interval, bool* bonus_active, int* points) {
     free_snake(*first);
     *last = NULL;
     *first = NULL;
@@ -402,7 +401,7 @@ void DrawCircle(SDL_Surface* screen, int x0, int y0, int radius, int kolor) {   
     }
 }
 
-void draw_blueDot(SDL_Surface* screen, dot* blueDot, dot* border, int niebieski) {
+void draw_blueDot(SDL_Surface* screen, struct dot* blueDot, struct dot* border, int niebieski) {
     struct dot center;
     center.x = (border->x + blueDot->x * CELL_SIZE) + CELL_SIZE / 2;                                    //obliczanie srodka okregu
     center.y = (border->y + blueDot->y * CELL_SIZE) + CELL_SIZE / 2;
@@ -410,7 +409,7 @@ void draw_blueDot(SDL_Surface* screen, dot* blueDot, dot* border, int niebieski)
     DrawCircle(screen, center.x, center.y, CELL_SIZE / BLUEDOT_SIZE, niebieski);
 }
 
-void draw_bonus(SDL_Surface* screen, dot* bonus, dot* border, int czerwony) {
+void draw_bonus(SDL_Surface* screen, struct dot* bonus, struct dot* border, int czerwony) {
     struct dot center;
     center.x = (border->x + bonus->x * CELL_SIZE) + CELL_SIZE / 2;                                      //obliczanie srodka okregu
     center.y = (border->y + bonus->y * CELL_SIZE) + CELL_SIZE / 2;
@@ -418,7 +417,7 @@ void draw_bonus(SDL_Surface* screen, dot* bonus, dot* border, int czerwony) {
     DrawCircle(screen, center.x, center.y, CELL_SIZE / BONUS_SIZE, czerwony);
 }
 
-void draw_snake(SDL_Surface* screen, Snake** first, dot* border, int zielony, int ciemno_zielony) {
+void draw_snake(SDL_Surface* screen, Snake** first, struct dot* border, int zielony, int ciemno_zielony) {
     struct dot segment;                                                                                 //funkcja rysujaca glowe i cialo weza
     for (Snake* current = *first; current != NULL; current = current->nextPos) {                           //petla przechodzaca przez kazdy element az do NULL w celu narysowania calego weza 
         segment.x = border->x + current->x * CELL_SIZE;
@@ -427,7 +426,7 @@ void draw_snake(SDL_Surface* screen, Snake** first, dot* border, int zielony, in
     }
 }
 
-void draw_border(SDL_Surface* screen, dot* border, int kolor) {                                         //rysowanie granic gry
+void draw_border(SDL_Surface* screen, struct dot* border, int kolor) {                                         //rysowanie granic gry
     DrawLine(screen, border->x, border->y, GRID_SIZE, 1, 0, kolor);
     DrawLine(screen, border->x, border->y + GRID_SIZE - 1, GRID_SIZE, 1, 0, kolor);
     DrawLine(screen, border->x, border->y, GRID_SIZE, 0, 1, kolor);
@@ -603,8 +602,8 @@ void display_score(struct scores* scores, SDL_Surface* screen, SDL_Surface* char
     }
 }
 
-int check_collision(SDL_Window* window, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Surface* screen, SDL_Surface* charset, dot* blueDot, int* quit, double* worldTime, double* snake_update_interval, bool* bonus_active,
-    dot* border, int* points, Snake** first, struct scores* high_scores, Colors* colors) {
+int check_collision(SDL_Window* window, SDL_Texture* scrtex, SDL_Renderer* renderer, SDL_Surface* screen, SDL_Surface* charset, struct dot* blueDot, int* quit, double* worldTime, double* snake_update_interval, bool* bonus_active,
+    struct dot* border, int* points, Snake** first, struct scores* high_scores, Colors* colors) {
     SDL_Event event2;                                                                                   //funkcja obslugujaca kolizje glowy weza z jego cialem
     Snake* current = (*first)->nextPos;
     bool goback = false;
@@ -649,7 +648,7 @@ int check_collision(SDL_Window* window, SDL_Texture* scrtex, SDL_Renderer* rende
     return 0;
 }
 
-void draw_info(SDL_Surface* screen, SDL_Surface* charset, char* text, int* points, Snake** first, Snake** last, dot* blueDot, double* worldTime, double* snake_update_interval, bool* bonus_active, double fps) {
+void draw_info(SDL_Surface* screen, SDL_Surface* charset, char* text, int* points, Snake** first, Snake** last, struct dot* blueDot, double* worldTime, double* snake_update_interval, bool* bonus_active, double fps) {
     sprintf(text, "'ESC' - quit   'R' - show requirements   'N' - new game");                           //wyswietlani glowych informacji na temat gry; liczby punktow, czasu, fps itd...
     DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, GAP, text, charset);
 
@@ -678,7 +677,7 @@ void init_colors(SDL_Surface* screen, Colors* colors) {                         
 }
 
 void main_functions(SDL_Surface* screen, SDL_Surface* charset, SDL_Window* window, SDL_Renderer* renderer, SDL_Texture* scrtex, char* text, Snake** first, Snake** last, double* worldTime, double* snake_update_interval,
-    bool* bonus_active, dot* border, dot* blueDot, dot* bonus, double* bonus_time_left, double* delta, double* snake_update_timer, int* points, double* last_speedup_time, bool* show_info, int* quit, int* t1, Colors* colors, scores* high_scores) {
+    bool* bonus_active, struct dot* border, struct dot* blueDot, struct dot* bonus, double* bonus_time_left, double* delta, double* snake_update_timer, int* points, double* last_speedup_time, bool* show_info, int* quit, int* t1, Colors* colors, struct scores* high_scores) {
     //funkcja obslugujaca wszystkie glowne podfunkcje gry takie jak: rysowanie wszystkich elementow oraz sprawdzanie kolizji miedzy nimi
     draw_border(screen, border, colors->szary);
     draw_snake(screen, first, border, colors->zielony, colors->ciemno_zielony);
@@ -722,7 +721,7 @@ void main_functions(SDL_Surface* screen, SDL_Surface* charset, SDL_Window* windo
     update_screen(scrtex, renderer, screen);                                                            //aktualizacja ekranu
 }
 
-void handle_events(SDL_Event* event, Snake** first, Snake** last, bool* show_info, int* quit, dot* blueDot, double* worldTime, double* snake_update_interval, bool* bonus_active, int* points) {
+void handle_events(SDL_Event* event, Snake** first, Snake** last, bool* show_info, int* quit, struct dot* blueDot, double* worldTime, double* snake_update_interval, bool* bonus_active, int* points) {
     while (SDL_PollEvent(event)) {                                                                      //glowna funkcja do obslugi kliknietych przez gracza przyciskow
         switch (event->type) {
         case SDL_QUIT:
@@ -776,7 +775,7 @@ void free_game(SDL_Surface* screen, SDL_Surface* charset, SDL_Surface* decoratio
     SDL_DestroyWindow(window);
 }
 
-void init_game(SDL_Surface* screen, SDL_Surface* charset, Snake** first, Snake** last, Colors* colors, dot* border, dot* blueDot, int* t1) {
+void init_game(SDL_Surface* screen, SDL_Surface* charset, Snake** first, Snake** last, Colors* colors, struct dot* border, struct dot* blueDot, int* t1) {
     SDL_SetColorKey(charset, true, 0x000000);                                                           //funkcja wczytujaca niektore podstawowe elementy potrzebne do zaladowania rozgrywki
     init_colors(screen, colors);
 
@@ -817,8 +816,8 @@ void DrawSnakeDecorations(SDL_Surface* screen, SDL_Surface* decoration) {
 }
 
 void game_loop(SDL_Surface* screen, SDL_Surface* charset, SDL_Surface* decoration, SDL_Window* window, SDL_Renderer* renderer, SDL_Texture* scrtex, char* text, Snake** first, Snake** last, SDL_Event* event, double* worldTime,
-    double* snake_update_interval, bool* bonus_active, dot* border, dot* blueDot, dot* bonus, double* bonus_time_left, double* delta, double* snake_update_timer, int* points, double* last_speedup_time,
-    bool* show_info, int* quit, int* t1, Colors* colors, scores* high_scores, int* t2, double* fpsTimer, double* fps, int* frames) {
+    double* snake_update_interval, bool* bonus_active, struct dot* border, struct dot* blueDot, struct dot* bonus, double* bonus_time_left, double* delta, double* snake_update_timer, int* points, double* last_speedup_time,
+    bool* show_info, int* quit, int* t1, Colors* colors, struct scores* high_scores, int* t2, double* fpsTimer, double* fps, int* frames) {
     while (!(*quit)) {                                                                                                                                                                                                                                       //glowna petla gry oblugujaca wiekszosc zdarzen na ekranie
         *t2 = SDL_GetTicks();
         *delta = (*t2 - *t1) * 0.001;                                                                                                                                                                                                   //wyswietlanie czasu
